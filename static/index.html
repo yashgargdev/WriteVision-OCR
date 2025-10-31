@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WriteVision • Handwritten Text Recognition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0B1020;
+      --card: #131A2B;
+      --muted: #8FA2C9;
+      --text: #E8EEF9;
+      --accent: #6EA8FE;
+      --accent2: #A26EFB;
+      --border: #243049;
+      --danger: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, #131A2B 0%, #0B1020 50%, #070B16 100%);
+      color: var(--text);
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .brand svg { width: 32px; height: 32px; }
+    .card {
+      background: linear-gradient(180deg, rgba(19,26,43,0.8), rgba(19,26,43,0.5));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+    .panel { padding: 20px; }
+    .panel h2 { margin: 0 0 8px; font-size: 16px; color: var(--muted); font-weight: 600; }
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      display: grid;
+      place-items: center;
+      min-height: 260px;
+      color: var(--muted);
+      transition: border-color 0.2s ease;
+    }
+    .dropzone.drag { border-color: var(--accent); }
+    .preview {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0d1324;
+      object-fit: contain;
+      max-height: 320px;
+    }
+    .actions { display: flex; gap: 10px; margin-top: 16px; }
+    button, .button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, #18223a, #11182a);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: transform 0.02s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    button:hover, .button:hover { border-color: #3b4f77; box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+    button:active, .button:active { transform: translateY(1px); }
+    .primary { border-color: #3b5fb4; background: linear-gradient(180deg, #1c315d, #162850); }
+    .muted { background: transparent; }
+    .danger { border-color: #ff8b8b; background: linear-gradient(180deg, #b13030, #8f2a2a); }
+
+    .output {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 240px;
+      background: #0d1324;
+      white-space: pre-wrap;
+    }
+    .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #2d3b59; }
+    .badge.on .dot { background: #4cc38a; }
+    footer { margin-top: 28px; color: var(--muted); font-size: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 6h16M4 12h10M4 18h7" stroke="url(#g)" stroke-width="2" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#6EA8FE"/>
+              <stop offset="1" stop-color="#A26EFB"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        WriteVision
+      </div>
+      <div class="badge" id="modelBadge">
+        <span class="dot"></span>
+        Model: TrOCR (handwritten)
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="grid">
+        <div class="panel">
+          <h2>Input Image</h2>
+          <div id="dropzone" class="dropzone">
+            <div>
+              <p>Drag & drop an image here, or</p>
+              <label class="button" for="file">Browse</label>
+              <input id="file" type="file" accept="image/*" style="display:none" />
+            </div>
+          </div>
+          <img id="preview" class="preview" alt="Preview" style="display:none" />
+
+          <div class="actions">
+            <button id="recognizeBtn" class="primary">Recognize Text</button>
+            <button id="clearBtn" class="muted">Clear</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Recognized Text</h2>
+          <div id="output" class="output" placeholder="Result will appear here..."></div>
+          <div class="actions">
+            <button id="copyBtn">Copy</button>
+            <button id="downloadBtn" class="primary">Download .txt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Built with Microsoft TrOCR, Flask, and Transformers.
+    </footer>
+  </div>
+
+  <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file');
+    const preview = document.getElementById('preview');
+    const output = document.getElementById('output');
+    const recognizeBtn = document.getElementById('recognizeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    let currentFile = null;
+
+    function setBadge(online) {
+      const badge = document.getElementById('modelBadge');
+      badge.classList.toggle('on', online);
+    }
+
+    async function checkOnline() {
+      try {
+        const res = await fetch('/');
+        setBadge(res.ok);
+      } catch (e) { setBadge(false); }
+    }
+    checkOnline();
+
+    function showPreview(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        preview.src = reader.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+    dropzone.addEventListener('dragleave', e => { dropzone.classList.remove('drag'); });
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault(); dropzone.classList.remove('drag');
+      const file = e.dataTransfer.files[0];
+      if (file) { currentFile = file; showPreview(file); }
+    });
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) { currentFile = file; showPreview(file); }
+    });
+
+    recognizeBtn.addEventListener('click', async () => {
+      if (!currentFile) { alert('Please select an image first.'); return; }
+      const form = new FormData();
+      form.append('image', currentFile);
+      output.textContent = 'Recognizing...';
+      try {
+        const res = await fetch('/api/recognize', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        output.textContent = data.text || '';
+      } catch (e) {
+        output.textContent = `Error: ${e.message}`;
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      currentFile = null; preview.style.display = 'none'; preview.src = '';
+      output.textContent = '';
+      fileInput.value = '';
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      const text = output.textContent.trim();
+      if (!text) return;
+      try { await navigator.clipboard.writeText(text); copyBtn.textContent = 'Copied!'; setTimeout(() => copyBtn.textContent = 'Copy', 1200); } catch {}
+    });
+
+    downloadBtn.addEventListener('click', async () => {
+      const text = output.textContent.trim();
+      if (!text) { alert('No text to download.'); return; }
+      try {
+        const res = await fetch('/api/export_txt', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text })
+        });
+        if (!res.ok) throw new Error('Failed to download');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'recognized.txt'; a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) { alert(e.message); }
+    });
+  </script>
+</body>
+</html>

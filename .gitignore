@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.DS_Store
+*.log
+.env
+
+# Training data (keep labels, ignore raw images)
+data/train/images/
+
+# Large model weights (keep configs/tokenizer, ignore weights)
+models/**/model.safetensors
+models/**/pytorch_model.bin
+
+# Cache and temp
+.pytest_cache/
+.cache/
+temp/
